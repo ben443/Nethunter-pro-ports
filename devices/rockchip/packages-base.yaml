@@ -10,3 +10,13 @@ actions:
     packages:
       - {{ $device }}-support
       - rsync
+
+  - action: run
+    description: Enable eg25-manager service
+    chroot: true
+    command: systemctl enable eg25-manager.service
+
+  - action: run
+    description: Update u-boot
+    chroot: true
+    command: u-boot-update 
