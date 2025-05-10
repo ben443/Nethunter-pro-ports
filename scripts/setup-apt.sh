@@ -15,7 +15,12 @@ if [ "$DEBIAN_SUITE" = "kali-rolling" ]; then
 fi
 
 # Set the proper suite in our sources.list
-sed -i "s/@@SUITE@@/${SUITE}/" /etc/apt/sources.list.d/mobian.list
+if [ -f /etc/apt/sources.list.d/mobian.sources ]; then
+  rm /etc/apt/sources.list.d/mobian.list
+  sed -i 's/^Components:[[:space:]]\+main[[:space:]]*$/Components: main non-free-firmware/' /etc/apt/sources.list.d/mobian.sources
+else
+  sed -i "s/@@SUITE@@/${SUITE}/" /etc/apt/sources.list.d/mobian.list
+fi
 
 cat > /etc/apt/preferences.d/00-kali-priority << EOF
 Package: *
