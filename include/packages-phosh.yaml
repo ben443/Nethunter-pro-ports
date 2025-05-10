@@ -37,6 +37,7 @@ actions:
       - sound-theme-phosh
       - webext-ublock-origin-firefox
       - chatty
+      - squeekboard
       - nethunter
       - hijacker
 
