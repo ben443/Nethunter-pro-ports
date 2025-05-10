@@ -18,6 +18,8 @@ fi
 if [ -f /etc/apt/sources.list.d/mobian.sources ]; then
   rm /etc/apt/sources.list.d/mobian.list
   sed -i 's/^Components:[[:space:]]\+main[[:space:]]*$/Components: main non-free-firmware/' /etc/apt/sources.list.d/mobian.sources
+  # SSL verification failed fix for mobian repository
+  sed -i 's|https|http|g' /etc/apt/sources.list.d/mobian.sources
 else
   sed -i "s/@@SUITE@@/${SUITE}/" /etc/apt/sources.list.d/mobian.list
 fi
