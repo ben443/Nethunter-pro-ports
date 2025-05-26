@@ -36,6 +36,11 @@ fi
 
 export PATH="/sbin:/usr/sbin:${PATH}"
 
+display_help() {
+  echo "Usage: ${0} [arguments]"
+  exit 0
+}
+
 while getopts "cdDvizobsZCrR:x:S:e:H:f:g:h:m:M:p:t:u:F:V:" opt; do
   case "${opt}" in
     c ) crypt_root=1 ;;
@@ -67,6 +72,7 @@ while getopts "cdDvizobsZCrR:x:S:e:H:f:g:h:m:M:p:t:u:F:V:" opt; do
     V ) version="${OPTARG}" ;;
     * )
       echo "Unknown option '${opt}'" 1>&2
+      display_help
       exit 1
       ;;
   esac
