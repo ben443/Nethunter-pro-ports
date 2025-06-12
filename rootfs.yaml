@@ -19,12 +19,8 @@ actions:
     suite: {{ $debian_suite }}
     components:
       - main
-{{ if eq $contrib "true" }}
       - contrib
-{{ end }}
-{{ if eq $nonfree "true" }}
       - non-free-firmware
-{{ end }}
     mirror: {{ $mirror }}
     variant: minbase
     keyring-file: kali-archive-keyring.gpg
