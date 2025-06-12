@@ -36,15 +36,19 @@ actions:
     chroot: true
     command: apt-get -y -f install
 
-  - action: run
-    description: Install mobian-archive-keyring
-    chroot: true
-    command: apt-get -y install mobian-archive-keyring
+- action: overlay
+  description: Add Droidian debs (keyring, apt config, transport)
+  source: overlays/droidian/
+  destination: /root/
 
-  - action: overlay
-    description: Enable Mobian repository
-    source: overlays/apt/
-    destination: /etc/apt/
+- action: run
+  description: Install Droidian keyring, apt config, and apt transport
+  chroot: true
+  command: |
+    dpkg -i /root/droidian-archive-keyring_2025.01.06+git20250106145953.b4c3a11.next.production_all.deb
+    dpkg -i /root/droidian-apt-config_69+git20240612100631.3a7582d.next.production_all.deb
+    dpkg -i /root/apt-transport-droidian_3.0.0+git20250427210415.0d0c12d.next.production_arm64.deb
+    apt-get -f install -y
 
   - action: overlay
     description: Enable resize of root partition
