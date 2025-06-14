@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 DEBOS_CMD=debos
 device="pinephone"
@@ -6,29 +6,32 @@ image="image"
 partitiontable="gpt"
 filesystem="ext4"
 environment="phosh"
-crypt_root=
-crypt_password=
+crypt_root=""
+crypt_password=""
 hostname="kali"
 arch="arm64"
-do_compress=
-family=
-image_only=
-installer=
-zram=
-memory=
+do_compress=""
+family=""
+image_only=""
+installer=""
+zram=""
+memory=""
 mirror="http://http.kali.org/kali"
 password="1234"
-use_docker=
+use_docker=""
 username="kali"
-no_blockmap=
-ssh=
+no_blockmap=""
+ssh=""
 debian_suite="kali-rolling"
 suite="trixie"
 contrib="true"
-sign=
-miniramfs=
-version=$( date +%Y%m%d )
-verbose=
+sign=""
+miniramfs=""
+version=$(date +%Y%m%d)
+verbose=""
+debug=""
+http_proxy=""
+ftp_proxy=""
 
 if [ -z "${ARGS+x}" ]; then
   ARGS=""
@@ -38,13 +41,42 @@ export PATH="/sbin:/usr/sbin:${PATH}"
 
 display_help() {
   echo "Usage: ${0} [arguments]"
+  echo ""
+  echo "Options:"
+  echo "  -c              Enable root encryption"
+  echo "  -R PASSWORD     Set encryption password"
+  echo "  -d              Use Docker"
+  echo "  -D              Enable debug mode"
+  echo "  -v              Enable verbose output"
+  echo "  -e ENV          Set environment (default: phosh)"
+  echo "  -H HOSTNAME     Set hostname (default: kali)"
+  echo "  -i              Build image only"
+  echo "  -z              Compress output"
+  echo "  -b              Skip blockmap creation"
+  echo "  -s              Enable SSH"
+  echo "  -o              Build installer"
+  echo "  -Z              Enable zram"
+  echo "  -f PROXY        Set FTP proxy"
+  echo "  -h PROXY        Set HTTP proxy"
+  echo "  -g KEY          Sign with GPG key"
+  echo "  -M MIRROR       Set mirror URL"
+  echo "  -m MEMORY       Set memory limit"
+  echo "  -p PASSWORD     Set user password"
+  echo "  -t DEVICE       Set target device"
+  echo "  -u USERNAME     Set username"
+  echo "  -F FILESYSTEM   Set filesystem type"
+  echo "  -x SUITE        Set Debian suite"
+  echo "  -S SUITE        Set suite"
+  echo "  -C              Enable contrib"
+  echo "  -r              Enable miniramfs"
+  echo "  -V VERSION      Set version"
   exit 0
 }
 
 while getopts "cdDvizobsZCrR:x:S:e:H:f:g:h:m:M:p:t:u:F:V:" opt; do
   case "${opt}" in
     c ) crypt_root=1 ;;
-    R ) crypt_password=${OPTARG} ;;
+    R ) crypt_password="${OPTARG}" ;;
     d ) use_docker=1 ;;
     D ) debug=1 ;;
     v ) verbose=1 ;;
@@ -71,7 +103,7 @@ while getopts "cdDvizobsZCrR:x:S:e:H:f:g:h:m:M:p:t:u:F:V:" opt; do
     r ) miniramfs=1 ;;
     V ) version="${OPTARG}" ;;
     * )
-      echo "Unknown option '${opt}'" 1>&2
+      echo "Unknown option '${opt}'" >&2
       display_help
       exit 1
       ;;
@@ -96,20 +128,24 @@ case "${device}" in
       device="wip"
     fi
     family="qcom"
-    SECTSIZE="$(tomlq -r '.bootimg.pagesize' devices/qcom/configs/${device}.toml)"
+    if command -v tomlq >/dev/null 2>&1; then
+      SECTSIZE="$(tomlq -r '.bootimg.pagesize' "devices/qcom/configs/${device}.toml" 2>/dev/null || echo "4096")"
+    else
+      SECTSIZE="4096"
+    fi
     ARGS="${ARGS} -e MKE2FS_DEVICE_SECTSIZE:${SECTSIZE} -t nonfree:true -t bootonroot:true"
     ;;
-  "amd64"|"amd64-free" )
-    arch="amd64"
-    family="amd64"
-    ARGS="${ARGS} -t imagesize:15GB -t installersize:10GB"
-    if [ "${device}" = "amd64" ]; then
+  "arm64"|"arm64-free" )
+    arch="arm64"
+    family="arm64"
+    ARGS="${ARGS} -e MKE2FS_DEVICE_SECTSIZE:${SECTSIZE} -t nonfree:true -t bootonroot:false"
+    if [ "${device}" = "arm64" ]; then
       ARGS="${ARGS} -t nonfree:true"
     fi
     ;;
   * )
-    echo "Unsupported device '${device}' "1>&2
-    echo "Supported devices: pinephone, pinephonepro, pinetab, pinetab2, sdm845, sm7225, amd64"
+    echo "Unsupported device '${device}'" >&2
+    echo "Supported devices: pinephone, pinephonepro, pinetab, pinetab2, sdm845, sm7225, arm64, arm64-free, librem5, qcom, qcom-wip"
     exit 1
     ;;
 esac
@@ -117,7 +153,7 @@ esac
 installfs_file="installfs-${arch}.tar.gz"
 
 image_file="nethunterpro-${version}-${device}-${environment}"
-if [ "$installer" ]; then
+if [ "${installer}" ]; then
   image="installer"
   image_file="${image_file}-${image}"
 fi
@@ -135,7 +171,7 @@ if [ ! "${image_only}" ]; then
 fi
 
 if [ "${use_docker}" ]; then
-  DEBOS_CMD=docker
+  DEBOS_CMD="docker"
   ARGS="run \
             --rm \
             --interactive \
@@ -185,7 +221,7 @@ if [ ! "${image_only}" ] || [ ! -f "${rootfs_file}" ]; then
   ${DEBOS_CMD} ${ARGS} rootfs.yaml || exit 1
 fi
 
-if [ "$installer" ]; then
+if [ "${installer}" ]; then
   if [ ! "${image_only}" ] || [ ! -f "${installfs_file}" ]; then
     ${DEBOS_CMD} ${ARGS} installfs.yaml || exit 1
   fi
@@ -195,20 +231,28 @@ if [ "$installer" ]; then
   fi
 
   ## Convert rootfs tarball to squashfs for inclusion in the installer image
-  zcat "rootfs-${device}-${environment}.tar.gz" | tar2sqfs "rootfs-${device}-${environment}.sqfs" > /dev/null 2>&1
+  if command -v tar2sqfs >/dev/null 2>&1; then
+    zcat "rootfs-${device}-${environment}.tar.gz" | tar2sqfs "rootfs-${device}-${environment}.sqfs" > /dev/null 2>&1
+  else
+    echo "Warning: tar2sqfs not found, skipping squashfs creation" >&2
+  fi
 fi
 
-${DEBOS_CMD} ${ARGS} "$image.yaml"
+${DEBOS_CMD} ${ARGS} "${image}.yaml"
 
-if [ "$installer" ]; then
+if [ "${installer}" ]; then
   rm -vf "rootfs-${device}-${environment}.sqfs"
 fi
 
-if [ ! "$no_blockmap" ] && [ -f "$image_file.img" ]; then
-  bmaptool create "$image_file.img" > "$image_file.img.bmap"
+if [ ! "${no_blockmap}" ] && [ -f "${image_file}.img" ]; then
+  if command -v bmaptool >/dev/null 2>&1; then
+    bmaptool create "${image_file}.img" > "${image_file}.img.bmap"
+  else
+    echo "Warning: bmaptool not found, skipping blockmap creation" >&2
+  fi
 fi
 
-if [ "$do_compress" ]; then
+if [ "${do_compress}" ]; then
   echo "Compressing ${image_file}..."
   [ -f "${image_file}.img" ] \
     && xz --compress --keep --force "${image_file}.img"
@@ -216,21 +260,30 @@ if [ "$do_compress" ]; then
     && tar cJf "${image_file}.tar.xz" "${image_file}".*.img
 fi
 
-if [ -n "$sign" ]; then
+if [ -n "${sign}" ]; then
   truncate -s0 "${image_file}.sha256sums"
-  if [ "$do_compress" ]; then
+  if [ "${do_compress}" ]; then
     extensions="img.xz tar.xz img.bmap"
   else
-    extensions="*.img"
+    extensions="img img.bmap"
   fi
 
   for ext in ${extensions}; do
     for file in "${image_file}".${ext}; do
-      sha256sum "${file}" >> "${image_file}.sha256sums"
+      if [ -f "${file}" ]; then
+        sha256sum "${file}" >> "${image_file}.sha256sums"
+      fi
     done
   done
 
-  [ -f "${image_file}.sha256sums".asc ] \
+  [ -f "${image_file}.sha256sums.asc" ] \
     && rm -v "${image_file}.sha256sums.asc"
-  gpg -u "${sign}" --clearsign "${image_file}.sha256sums"
+  
+  if command -v gpg >/dev/null 2>&1; then
+    gpg -u "${sign}" --clearsign "${image_file}.sha256sums"
+  else
+    echo "Warning: gpg not found, skipping signing" >&2
+  fi
 fi
+
+echo "Build completed successfully!"
