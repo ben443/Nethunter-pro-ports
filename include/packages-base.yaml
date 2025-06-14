@@ -13,7 +13,7 @@ actions:
     recommends: false
     description: Install base packages
     packages:
-      - mobian-base
+      - droidian-base
       - kali-linux-core
       - kali-themes-mobile
       - systemd-repart
