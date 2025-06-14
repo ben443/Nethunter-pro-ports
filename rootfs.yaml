@@ -33,6 +33,12 @@ actions:
     chroot: true
     command: apt-get -y -f install
 
+  - action: run
+    description: Add Droidian mirror
+    chroot: true
+    command: | 
+      echo "deb [trusted=yes] https://production.repo.droidian.org/ trixie main" >> /etc/apt/sources.list.d/droidian.list
+
   - action: overlay
     description: Enable Mobian repository
     source: overlays/apt/
