@@ -1,0 +1,30 @@
+name: Build arm64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget proot tar xz-utils curl git sudo python3 python3-pip zip unzip aria2 patchelf axel dos2unix zstd squashfs-tools busybox \
+            android-sdk-libsparse-utils yq debos bmap-tools
+
+      - name: Run build script
+        run: |
+          chmod +x ./build.sh
+          ./build.sh -t arm64
+
+      - name: Upload rootfs.img artifact
+        if: success() && (hashFiles('rootfs.img') != '')
+        uses: actions/upload-artifact@v4
+        with:
+          name: rootfs-arm64
+          path: rootfs.img
