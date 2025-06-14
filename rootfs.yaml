@@ -40,19 +40,9 @@ actions:
       echo "deb [trusted=yes] https://production.repo.droidian.org/ trixie main" >> /etc/apt/sources.list.d/droidian.list
 
   - action: overlay
-    description: Enable Mobian repository
-    source: overlays/apt/
-    destination: /etc/apt/
-
-  - action: overlay
     description: Enable resize of root partition
     source: overlays/repart.d/
     destination: /etc/repart.d/
-
-  - action: run
-    description: Setup Mobian repository
-    chroot: true
-    script: scripts/setup-apt.sh {{ $debian_suite }} {{ $suite }} {{ $contrib }} {{ $nonfree }}
 
   - action: recipe
     recipe: include/packages-base.yaml
