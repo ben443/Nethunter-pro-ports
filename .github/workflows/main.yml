@@ -20,7 +20,7 @@ jobs:
       - name: Run build script
         run: |
           chmod +x ./build.sh
-          ./build.sh -t arm64
+          ./build.sh -t qcom
 
       - name: Upload rootfs.img artifact
         if: success() && (hashFiles('rootfs.img') != '')
