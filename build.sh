@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 DEBOS_CMD=debos
-device="pinephone"
+device="arm64"
 image="image"
 partitiontable="gpt"
-filesystem="ext4"
+filesystem="f2fs"
 environment="phosh"
 crypt_root=""
 crypt_password=""
 hostname="kali"
 arch="arm64"
 do_compress=""
-family=""
+family="arm64"
 image_only=""
 installer=""
 zram=""
@@ -20,13 +20,13 @@ mirror="http://http.kali.org/kali"
 password="1234"
 use_docker=""
 username="kali"
-no_blockmap=""
-ssh=""
+no_blockmap="true"
+ssh="true"
 debian_suite="kali-rolling"
 suite="trixie"
 contrib="true"
 sign=""
-miniramfs=""
+miniramfs="true"
 version=$(date +%Y%m%d)
 verbose=""
 debug=""
@@ -137,6 +137,7 @@ case "${device}" in
     ;;
   "arm64"|"arm64-free" )
     arch="arm64"
+    SECTSIZE="4096"
     family="arm64"
     ARGS="${ARGS} -e MKE2FS_DEVICE_SECTSIZE:${SECTSIZE} -t nonfree:true -t bootonroot:false"
     if [ "${device}" = "arm64" ]; then
