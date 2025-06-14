@@ -1,101 +1,53 @@
-# rootfs.yaml - Root filesystem build recipe for Nethunter-pro-ports
-# Maintainer: ben443
-# Description: Defines the build sequence for your custom Kali/Mobian-based rootfs.
-# Usage Example:
-#   Render this file with your build system, supplying variables as needed:
-#   architecture=arm64 username=kali password=changeme hostname=myhost environment=phosh mirror=http://http.kali.org/kali suite=trixie ...
-#
-# Notes:
-#   - Parameterize as many variables as needed for your deployment.
-#   - Review overlays and scripts before building.
-
-# =========================
-# VARIABLE DEFINITIONS
-# =========================
 {{- $architecture := or .architecture "arm64" -}}
-{{- $username := or .username "kali" -}}
+{{- $username := or .username "mobian" -}}
 {{- $password := or .password "1234" -}}
-{{- $hostname := or .hostname "kali" -}}
+{{- $hostname := or .hostname "mobian" -}}
 {{- $environment := or .environment "phosh" -}}
 {{- $contrib := or .contrib "false" -}}
 {{- $nonfree := or .nonfree "false" -}}
 {{- $ssh := or .ssh "" -}}
-{{- $zram := or .zram "false" -}}
-{{- $zram_size := or .zram_size "512M" -}}
-{{- $zram_count := or .zram_count "1" -}}
-{{- $debian_suite := or .debian_suite "kali-rolling" -}}
-{{- $suite := or .suite "trixie" -}}
-{{- $rootfs := or .rootfs "rootfs.tar.gz" -}}
-{{- $mirror := or .mirror "http://http.kali.org/kali" -}}
-{{- $disable_branding := or .disable_branding "false" -}}
+{{- $zram:= or .zram "false" -}}
+{{- $debian_suite := or .debian_suite "trixie" -}}
+{{- $suite := or .suite $debian_suite -}}
+{{- $rootfs := or .rootfs "rootfs.tar.gz" }}
+{{- $mirror := or .mirror "http://deb.debian.org/debian" -}}
+
 architecture: {{ $architecture }}
 
-# =========================
-# MAIN ACTION SEQUENCE
-# =========================
 actions:
-  # 1. Bootstrap the base system
   - action: debootstrap
     suite: {{ $debian_suite }}
     components:
       - main
+{{ if eq $contrib "true" }}
       - contrib
+{{ end }}
+{{ if eq $nonfree "true" }}
       - non-free-firmware
+{{ end }}
     mirror: {{ $mirror }}
     variant: minbase
-    keyring-file: kali-archive-keyring.gpg
-    keyring-package: kali-archive-keyring
-    check-gpg: false
 
-  # 2. Fix package issues on merged-/usr systems
   - action: run
     description: Fix build on usr-merged systems
     chroot: true
     command: apt-get -y -f install
 
-  # 3. Add Droidian overlays (keyring, apt config, apt transport)
   - action: overlay
-    description: Add Droidian debs (keyring, apt config, transport)
-    source: overlays/droidian/
-    destination: /root/
+    description: Enable Mobian repository
+    source: overlays/apt/
+    destination: /etc/apt/
 
-  - action: run
-    description: Install Droidian keyring, apt config, and apt transport
-    chroot: true
-    command: |
-      set -e
-      dpkg -i /root/droidian-archive-keyring_2025.01.06+git20250106145953.b4c3a11.next.production_all.deb
-      dpkg -i /root/droidian-apt-config_69+git20240612100631.3a7582d.next.production_all.deb
-      dpkg -i /root/apt-transport-droidian_3.0.0+git20250427210415.0d0c12d.next.production_arm64.deb
-      apt-get -f install -y
-
-  # 4. Optional overlays for repartitioning
   - action: overlay
     description: Enable resize of root partition
     source: overlays/repart.d/
     destination: /etc/repart.d/
 
-  # 5. Optional branding (conditionally disable)
-  {{ if eq $disable_branding "false" }}
-  - action: overlay
-    description: Disable Kali motd during boot
-    source: overlays/kali-motd/
-    destination: /etc/kali-motd/
-  {{ end }}
-
-  # 6. Squeekboard terminal layout overlay
-  - action: overlay
-    description: Add improved Squeekboard terminal layout
-    source: overlays/skel/
-    destination: /etc/skel/
-
-  # 7. Setup Mobian repository (scripted)
   - action: run
     description: Setup Mobian repository
     chroot: true
     script: scripts/setup-apt.sh {{ $debian_suite }} {{ $suite }} {{ $contrib }} {{ $nonfree }}
 
-  # 8. Include core package recipes (modular)
   - action: recipe
     recipe: include/packages-base.yaml
     variables:
@@ -104,14 +56,12 @@ actions:
   - action: recipe
     recipe: include/packages-{{ $environment }}.yaml
 
-  # 9. Set up the default user account
   - action: run
     description: Set up default user
     chroot: true
     script: scripts/setup-user.sh {{ $username }} {{ $password }}
 
-  # 10. SSH configuration (conditional)
-  {{ if $ssh }}
+{{ if $ssh }}
   - action: overlay
     description: Set up sshd configuration
     source: overlays/sshd_config.d/
@@ -126,33 +76,19 @@ actions:
     description: Set owner of .ssh
     chroot: true
     command: chown -R {{ $username }}:{{ $username }} /home/{{ $username }}/.ssh/
-  {{ end }}
+{{ end }}
 
-  # 11. ZRAM configuration (conditional)
-  {{ if eq $zram "true" }}
+{{ if eq $zram "true" }}
   - action: overlay
-    description: Setup zram devices
+    description: setup zram devices
     source: overlays/zram/
     destination: /etc/
-    variables:
-      zram_size: {{ $zram_size }}
-      zram_count: {{ $zram_count }}
-  {{ end }}
+{{ end }}
 
-  # 12. Final system setup
   - action: run
     description: Set up system
     chroot: true
     script: scripts/setup-system.sh {{ $hostname }}
 
-  # 13. Pack the rootfs
   - action: pack
     file: {{ $rootfs }}
-
-# =========================
-# NOTES
-# =========================
-# - Set architecture (and all other top-level variables) when rendering.
-# - Parameterize more variables for your deployment as needed.
-# - Review each script/overlay before building.
-# - Optionally, add a validation action before packing.
