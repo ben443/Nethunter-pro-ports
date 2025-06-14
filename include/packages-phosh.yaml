@@ -7,7 +7,7 @@ actions:
     recommends: false
     description: Install Phosh packages
     packages:
-      - mobian-phosh
+      - droidian-phosh-full
       # Additional software we don't want metapackages to depend on
       - endeavour
       - epiphany-browser
