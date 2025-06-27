@@ -13,7 +13,7 @@ actions:
     recommends: false
     description: Install base packages
     packages:
-      - droidian-base
+      - droidian-phosh
       - kali-linux-core
       - kali-themes-mobile
       - systemd-repart
