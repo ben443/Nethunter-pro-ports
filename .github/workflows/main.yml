@@ -11,15 +11,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install dependencies and set up repositories
         run: |
           sudo apt-get update
-          # Add missing GPG keys for Kali and Mobian repositories
-          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 827C8569F2518CC677FECA1AED65462EC8D5E4C5 || true
-          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 970B1DD5FF63506F85001159951D61F2BC232697 || true
-          # Ensure CA certificates are up to date for SSL
-          sudo apt-get install -y ca-certificates
-          # Continue with regular dependencies
+          sudo apt-get install -y curl gpg ca-certificates
+          sudo update-ca-certificates
+
+          # Add Kali GPG key using keyring
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://archive.kali.org/archive-key.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/kali-archive-keyring.gpg > /dev/null
+
+          # Add Kali repository
+          echo "deb [signed-by=/etc/apt/keyrings/kali-archive-keyring.gpg] http://http.kali.org/kali kali-rolling main contrib non-free" | sudo tee /etc/apt/sources.list.d/kali.list
+
+          # Add Droidian GPG key using keyring
+          curl -fsSL https://repo.droidian.org/droidian-archive-keyring.gpg | sudo tee /etc/apt/keyrings/droidian-archive-keyring.gpg > /dev/null
+
+          # Add Droidian repository
+          echo "deb [signed-by=/etc/apt/keyrings/droidian-archive-keyring.gpg] https://production.repo.droidian.org trixie main" | sudo tee /etc/apt/sources.list.d/droidian.list
+
+          sudo apt-get update
+
+          # Install all required build dependencies
           sudo apt-get install -y wget proot tar xz-utils curl git uml-utilities debootstrap sudo python3 python3-pip zip unzip aria2 patchelf axel dos2unix zstd squashfs-tools busybox \
             android-sdk-libsparse-utils yq debos bmap-tools
 
