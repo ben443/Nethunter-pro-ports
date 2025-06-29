@@ -11,6 +11,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Fix /lib32 diversion conflict
+        run: |
+          sudo dpkg-divert --remove /lib32 || true
+          sudo rm -rf /.lib32.usr-is-merged /lib32.usr-is-merged || true
+          sudo dpkg --configure -a
+          sudo apt-get install -f
+
       - name: Install dependencies and set up repositories
         run: |
           sudo apt-get update
