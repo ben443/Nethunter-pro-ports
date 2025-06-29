@@ -22,13 +22,13 @@ jobs:
           curl -fsSL https://archive.kali.org/archive-key.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/kali-archive-keyring.gpg > /dev/null
 
           # Add Kali repository
-          echo "deb [signed-by=/etc/apt/keyrings/kali-archive-keyring.gpg] http://http.kali.org/kali kali-rolling main contrib non-free" | sudo tee /etc/apt/sources.list.d/kali.list
+          echo "deb [trusted=yes] http://http.kali.org/kali kali-rolling main contrib non-free" | sudo tee /etc/apt/sources.list.d/kali.list
 
           # Add Droidian GPG key using keyring
           curl -fsSL https://repo.droidian.org/droidian-archive-keyring.gpg | sudo tee /etc/apt/keyrings/droidian-archive-keyring.gpg > /dev/null
 
           # Add Droidian repository
-          echo "deb [signed-by=/etc/apt/keyrings/droidian-archive-keyring.gpg] https://production.repo.droidian.org trixie main" | sudo tee /etc/apt/sources.list.d/droidian.list
+          echo "deb [trusted=yes] https://production.repo.droidian.org trixie main" | sudo tee /etc/apt/sources.list.d/droidian.list
 
           sudo apt-get update
 
