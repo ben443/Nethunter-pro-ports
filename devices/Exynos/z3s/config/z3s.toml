@@ -1,0 +1,15 @@
+[bootimg]
+base = 0x10000000
+kernel = 0x00008000
+ramdisk = 0x01000000
+second = 0xf0000000
+tags = 0x00000100
+pagesize = 2048
+cmdline = "androidboot.hardware=exynos990 console=tty0 rw splash loop.max_part=7"
+os_version = "11.0.0"
+os_patch_level = "2024-05"
+
+[[device]]
+vendor = "samsung"
+model = "SRPSI19B020KU"
+append = ""
